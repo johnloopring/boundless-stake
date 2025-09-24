@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../hooks/useWallet';
-import { getContractAddresses, getNetworkConfig, NETWORKS } from '../config/contracts';
+import { getContractAddresses, NETWORKS } from '../config/contracts';
 import { ZKC_TOKEN_ABI } from '../abi/ZkcToken';
 import { STAKING_CONTRACT_ABI } from '../abi/StakingContract';
 
@@ -10,6 +10,8 @@ const StakingComponent = () => {
   const [zkcBalance, setZkcBalance] = useState('0');
   const [stakingBalance, setStakingBalance] = useState('0');
   const [withdrawalTime, setWithdrawalTime] = useState('0');
+  const [currentDelegate, setCurrentDelegate] = useState('');
+  const [delegateInputAddress, setDelegateInputAddress] = useState('');
   const [stakeAmount, setStakeAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [allowance, setAllowance] = useState('0');
@@ -45,10 +47,13 @@ const StakingComponent = () => {
         zkcContract.allowance(account, addresses.staking)
       ]);
 
+      const delegateInfo = await stakingContract.delegates(account);
+
       setZkcBalance(ethers.formatEther(balance));
       setStakingBalance(ethers.formatEther(stakingInfo[0]));
       setWithdrawalTime(stakingInfo[1].toString());
       setAllowance(ethers.formatEther(allowanceAmount));
+      setCurrentDelegate(delegateInfo);
     } catch (error) {
       console.error('Failed to fetch balances:', error);
     }
@@ -102,6 +107,30 @@ const StakingComponent = () => {
     } catch (error) {
       console.error('Stake failed:', error);
       alert('Stake failed: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelegate = async () => {
+    if (!signer || !delegateInputAddress) return;
+
+    setIsLoading(true);
+    try {
+      const addresses = getContractAddresses(currentNetwork);
+      const stakingContract = new ethers.Contract(addresses.staking, STAKING_CONTRACT_ABI, signer);
+
+      const tx = await stakingContract.delegate(delegateInputAddress);
+
+      console.log('Delegate transaction sent:', tx.hash);
+      await tx.wait();
+
+      console.log('Delegate confirmed');
+      setDelegateInputAddress('');
+      await fetchBalances();
+    } catch (error) {
+      console.error('Delegate failed:', error);
+      alert('Delegate failed: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -165,6 +194,7 @@ const StakingComponent = () => {
         <p><strong>ZKC Balance:</strong> {parseFloat(zkcBalance).toFixed(4)} ZKC</p>
         <p><strong>Staked Balance:</strong> {parseFloat(stakingBalance).toFixed(4)} veZKC</p>
         <p><strong>Allowance:</strong> {parseFloat(allowance).toFixed(4)} ZKC</p>
+        <p><strong>Current Delegate:</strong> {currentDelegate === '0x0000000000000000000000000000000000000000' ? 'None' : currentDelegate}</p>
       </div>
 
       <div style={{ marginBottom: '20px' }}>
@@ -201,6 +231,41 @@ const StakingComponent = () => {
             }}
           />
         </label>
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        <label>
+          Delegate Address:
+          <input
+            type="text"
+            value={delegateInputAddress}
+            onChange={(e) => setDelegateInputAddress(e.target.value)}
+            placeholder="Enter address to delegate to"
+            style={{
+              marginLeft: '10px',
+              padding: '8px',
+              width: '400px',
+              border: '1px solid #ccc',
+              borderRadius: '4px'
+            }}
+          />
+        </label>
+        <button
+          onClick={handleDelegate}
+          disabled={isLoading || !delegateInputAddress}
+          style={{
+            marginLeft: '10px',
+            padding: '8px 16px',
+            backgroundColor: '#FF9800',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: isLoading || !delegateInputAddress ? 'not-allowed' : 'pointer',
+            opacity: isLoading || !delegateInputAddress ? 0.6 : 1
+          }}
+        >
+          {isLoading ? 'Delegating...' : 'Delegate'}
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
@@ -245,6 +310,7 @@ const StakingComponent = () => {
           <li>Enter the amount of ZKC you want to stake</li>
           <li>Click "Approve" to allow the staking contract to spend your ZKC tokens</li>
           <li>After approval is confirmed, click "Stake" to stake your tokens</li>
+          <li>Optionally, enter an address to delegate your voting power to and click "Delegate"</li>
         </ol>
       </div>
     </div>

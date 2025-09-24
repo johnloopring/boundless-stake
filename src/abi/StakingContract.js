@@ -28,6 +28,24 @@ export const STAKING_CONTRACT_ABI = [
     "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "delegate",
+    "inputs": [
+      {"name": "delegatee", "type": "address", "internalType": "address"}
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "delegates",
+    "inputs": [
+      {"name": "account", "type": "address", "internalType": "address"}
+    ],
+    "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+    "stateMutability": "view"
+  },
+  {
     "type": "event",
     "name": "Staked",
     "inputs": [
