@@ -47,7 +47,7 @@ const StakingComponent = () => {
         zkcContract.allowance(account, addresses.staking)
       ]);
 
-      const delegateInfo = await stakingContract.delegates(account);
+      const delegateInfo = await stakingContract.rewardDelegates(account);
 
       setZkcBalance(ethers.formatEther(balance));
       setStakingBalance(ethers.formatEther(stakingInfo[0]));
@@ -120,7 +120,7 @@ const StakingComponent = () => {
       const addresses = getContractAddresses(currentNetwork);
       const stakingContract = new ethers.Contract(addresses.staking, STAKING_CONTRACT_ABI, signer);
 
-      const tx = await stakingContract.delegate(delegateInputAddress);
+      const tx = await stakingContract.delegateRewards(delegateInputAddress);
 
       console.log('Delegate transaction sent:', tx.hash);
       await tx.wait();
