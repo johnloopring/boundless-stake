@@ -9,6 +9,7 @@ const StakingComponent = () => {
   const { account, signer, chainId, isConnected, connectWallet, switchNetwork } = useWallet();
   const [zkcBalance, setZkcBalance] = useState('0');
   const [stakingBalance, setStakingBalance] = useState('0');
+  const [withdrawalTime, setWithdrawalTime] = useState('0');
   const [stakeAmount, setStakeAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [allowance, setAllowance] = useState('0');
@@ -38,14 +39,15 @@ const StakingComponent = () => {
       const zkcContract = new ethers.Contract(addresses.zkc, ZKC_TOKEN_ABI, signer);
       const stakingContract = new ethers.Contract(addresses.staking, STAKING_CONTRACT_ABI, signer);
 
-      const [balance, staked, allowanceAmount] = await Promise.all([
+      const [balance, stakingInfo, allowanceAmount] = await Promise.all([
         zkcContract.balanceOf(account),
-        stakingContract.balanceOf(account),
+        stakingContract.getStakedAmountAndWithdrawalTime(account),
         zkcContract.allowance(account, addresses.staking)
       ]);
 
       setZkcBalance(ethers.formatEther(balance));
-      setStakingBalance(ethers.formatEther(staked));
+      setStakingBalance(ethers.formatEther(stakingInfo[0]));
+      setWithdrawalTime(stakingInfo[1].toString());
       setAllowance(ethers.formatEther(allowanceAmount));
     } catch (error) {
       console.error('Failed to fetch balances:', error);

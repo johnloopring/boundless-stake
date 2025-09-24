@@ -10,11 +10,14 @@ export const STAKING_CONTRACT_ABI = [
   },
   {
     "type": "function",
-    "name": "balanceOf",
+    "name": "getStakedAmountAndWithdrawalTime",
     "inputs": [
       {"name": "account", "type": "address", "internalType": "address"}
     ],
-    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "outputs": [
+      {"name": "stakedAmount", "type": "uint256", "internalType": "uint256"},
+      {"name": "withdrawalTime", "type": "uint256", "internalType": "uint256"}
+    ],
     "stateMutability": "view"
   },
   {
